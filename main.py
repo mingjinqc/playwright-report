@@ -44,16 +44,83 @@ def test_salesforce_username():
 
         browser.close()
 
-    # Create static HTML summary
-    html_summary = """
+    # Count Pass/Fail
+    passed = sum(1 for x in result_data if x["result"] == "Passed")
+    failed = sum(1 for x in result_data if x["result"] == "Failed")
+
+    # ✅ Create static HTML summary with chart + table
+    html_summary = f"""
     <html>
-    <head><style>
-    table {border-collapse: collapse; width: 100%;}
-    th, td {border: 1px solid #ddd; padding: 8px;}
-    th {background-color: #f2f2f2;}
-    img {width: 200px;}
-    </style></head><body>
-    <h3>Test Summary</h3>
+    <head>
+    <style>
+    body {{ font-family: Arial, sans-serif; margin: 20px; }}
+    table {{ border-collapse: collapse; width: 100%; margin-top: 20px; }}
+    th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+    th {{ background-color: #f2f2f2; }}
+    img {{ width: 200px; }}
+    #chartContainer {{ width: 300px; height: 300px; margin: auto; }}
+    </style>
+    </head>
+    <body>
+    <h2>Salesforce Username Field Test Summary</h2>
+    <div id="chartContainer">
+        <canvas id="resultChart" width="300" height="300"></canvas>
+    </div>
+
+    <script>
+    const ctx = document.getElementById('resultChart').getContext('2d');
+    const passed = {passed};
+    const failed = {failed};
+    const total = passed + failed;
+    const passPct = ((passed / total) * 100).toFixed(1);
+    const failPct = ((failed / total) * 100).toFixed(1);
+    const data = {{
+        labels: [`Passed: ${{passed}} (${{passPct}}%)`, `Failed: ${{failed}} (${{failPct}}%)`],
+        datasets: [{{
+            data: [passed, failed],
+            backgroundColor: ['#4CAF50', '#F44336']
+        }}]
+    }};
+    const chart = new Chart(ctx, {{
+        type: 'pie',
+        data: data,
+        options: {{
+            responsive: false,
+            plugins: {{
+                legend: {{
+                    position: 'bottom'
+                }},
+                title: {{
+                    display: true,
+                    text: 'Test Results Overview'
+                }}
+            }}
+        }}
+    }});
+    </script>
+    <script>
+    // Inline Chart.js (no internet needed)
+    const Chart = function(ctx, config) {{
+        const canvas = ctx.canvas;
+        const values = config.data.datasets[0].data;
+        const colors = config.data.datasets[0].backgroundColor;
+        const total = values.reduce((a,b) => a+b, 0);
+        const cx = canvas.width/2, cy = canvas.height/2, r = Math.min(cx, cy) - 10;
+        let start = 0;
+        for (let i=0;i<values.length;i++) {{
+            const val = values[i]/total;
+            const end = start + val * 2 * Math.PI;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, r, start, end);
+            ctx.closePath();
+            ctx.fillStyle = colors[i];
+            ctx.fill();
+            start = end;
+        }}
+    }};
+    </script>
+
     <table>
         <tr><th>Step</th><th>Result</th><th>Screenshot</th></tr>
     """
@@ -71,6 +138,6 @@ def test_salesforce_username():
     with open(summary_path, "w") as f:
         f.write(html_summary)
 
-    # Attach to Allure safely using string (not file)
+    # Attach as HTML string
     with open(summary_path, "r") as f:
         allure.attach(f.read(), name="HTML Summary", attachment_type=allure.attachment_type.HTML)
