@@ -1,40 +1,36 @@
-# 🧪 Playwright Allure & Static Report Generator
+# 🧪 Playwright Allure Report Generator
 
-This repository automatically runs a Playwright + Allure test suite whenever `username.json` is changed in the `main` branch.
+This repository runs automated Playwright browser tests and generates **two reports** whenever `username.json` is updated on the `main` branch.
 
 ---
 
 ## 🔹 What it does
-1. Launches a headless Chromium browser using **Playwright (Python)**.  
-2. Opens [https://login.salesforce.com](https://login.salesforce.com).  
-3. Reads the username from `username.json` and fills it in.  
-4. Takes screenshots before and after clearing the field.  
-5. Generates **two reports** in the `docs/` folder:
-   - 📊 `index.html` — interactive **Allure report** (with screenshots and charts).  
-   - 📘 `report.html` — simple static summary table for quick viewing.  
-6. Publishes automatically to **GitHub Pages 🌐**.
+1. Opens [https://login.salesforce.com](https://login.salesforce.com).
+2. Fills the username from `username.json` and takes a screenshot.
+3. Clears the field and takes another screenshot.
+4. Generates **two reports**:
+   - 📊 `docs/index.html` → Allure interactive report  
+   - 📋 `docs/report.html` → Static HTML summary table
+5. Publishes both automatically to **GitHub Pages 🌐**.
 
 ---
 
-## 🔹 Folder Overview
-| File | Description |
-|------|--------------|
-| `main.py` | Playwright automation and Allure logic |
-| `username.json` | Input test data |
-| `requirements.txt` | Python dependencies |
-| `.github/workflows/generate-report.yml` | GitHub Actions automation |
-| `docs/` | Allure report (`index.html`) + static summary (`report.html`) |
+## 🔹 Files
+- `main.py` → Playwright test + report logic  
+- `username.json` → Test input data  
+- `.github/workflows/generate-report.yml` → Automation  
+- `docs/` → Allure report (`index.html`) + static report (`report.html`)
 
 ---
 
 ## 🔹 Trigger
-Runs automatically whenever `username.json` is modified in the `main` branch.
+Runs automatically when either `main.py` or `username.json` changes in the `main` branch.
 
 ---
 
 ## 🔹 View the Reports on GitHub Pages
-After the first successful workflow run, view your reports here:
-```html
-https://<your-username>.github.io/<your-repo-name>/
-```
+After the first successful run:
 
+```html
+https://<your-username>.github.io/<your-repo-name>/index.html
+https://<your-username>.github.io/<your-repo-name>/report.html
