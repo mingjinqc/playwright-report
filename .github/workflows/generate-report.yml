@@ -1,4 +1,4 @@
-name: Generate Report when username.json changes
+name: Generate Report and Publish to GitHub Pages
 
 on:
   push:
@@ -7,12 +7,14 @@ on:
     paths:
       - 'username.json'
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
   generate-report:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,3 +39,22 @@ jobs:
           git add docs/
           git commit -m "Auto-update Playwright report after username.json change" || echo "No changes to commit"
           git push
+
+  deploy-to-pages:
+    needs: generate-report
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Upload artifact for GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
