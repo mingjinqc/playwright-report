@@ -1,9 +1,9 @@
 import os
 import json
 import time
-import allure
 from playwright.sync_api import sync_playwright
 import pytest
+import allure
 
 @allure.feature("Salesforce Username Field Test")
 def test_salesforce_username():
@@ -50,38 +50,35 @@ def test_salesforce_username():
     passed = sum(1 for x in result_data if x["result"] == "Passed")
     failed = sum(1 for x in result_data if x["result"] == "Failed")
 
-    # ✅ Static HTML report
+    # ✅ Static HTML report (docs/index.html)
     html_summary = f"""
     <html>
     <head>
-    <style>
-    body {{ font-family: Arial, sans-serif; margin: 20px; }}
-    table {{ border-collapse: collapse; width: 100%; margin-top: 20px; }}
-    th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-    th {{ background-color: #f2f2f2; }}
-    img {{ width: 200px; cursor: pointer; }}
-    </style>
+        <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; }}
+        table {{ border-collapse: collapse; width: 100%; margin-top: 20px; }}
+        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+        th {{ background-color: #f2f2f2; }}
+        img {{ width: 200px; cursor: pointer; }}
+        </style>
     </head>
     <body>
-    <h2>Salesforce Username Field Test Summary</h2>
-    <table>
-    <tr><th>Step</th><th>Result</th><th>Screenshot</th></tr>
+        <h2>Salesforce Username Field Test Summary</h2>
+        <table>
+            <tr><th>Step</th><th>Result</th><th>Screenshot</th></tr>
     """
 
     for item in result_data:
         html_summary += f"""
-        <tr>
-            <td>{item['step']}</td>
-            <td>{item['result']}</td>
-            <td>{'<a href="'+item['screenshot']+'" target="_blank"><img src="'+item['screenshot'].replace("docs/", "")+'"></a>' if item['screenshot'] else 'N/A'}</td>
-        </tr>
+            <tr>
+                <td>{item['step']}</td>
+                <td>{item['result']}</td>
+                <td>{'<a href="'+item['screenshot']+'" target="_blank"><img src="'+item['screenshot'].replace("docs/", "")+'"></a>' if item['screenshot'] else 'N/A'}</td>
+            </tr>
         """
 
     html_summary += "</table></body></html>"
 
     # Save static HTML report
-    with open("docs/report.html", "w") as f:
+    with open("docs/index.html", "w") as f:
         f.write(html_summary)
-
-    # Save an Allure-compatible summary for CI/CD
-    allure.attach(html_summary, name="Allure HTML Summary", attachment_type=allure.attachment_type.HTML)
