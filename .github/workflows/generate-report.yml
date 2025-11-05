@@ -1,20 +1,17 @@
-name: Generate Report and Publish to GitHub Pages
+name: Generate Allure & Static Reports
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
-      - 'username.json'
-
-permissions:
-  contents: write
-  pages: write
-  id-token: write
+      - "username.json"
 
 jobs:
-  generate-report:
+  run-tests:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,39 +19,27 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.10"
 
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          playwright install --with-deps chromium
+          python -m playwright install --with-deps chromium
 
-      - name: Run Playwright test
-        run: python main.py
-
-      - name: Commit updated report to main
+      - name: Run Playwright test and generate reports
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/
-          git commit -m "Auto-update Playwright report after username.json change" || echo "No changes to commit"
+          pytest main.py --alluredir=allure-results
+          allure generate allure-results --clean -o docs
+
+      - name: Add static summary button to Allure index.html
+        run: |
+          REPORT_HTML_LINK='<a href="report.html" target="_blank" style="position:fixed;top:20px;right:20px;padding:10px 16px;background:#4CAF50;color:#fff;border-radius:6px;text-decoration:none;font-weight:bold;">📘 View Static Summary</a>'
+          sed -i "s|</body>|${REPORT_HTML_LINK}</body>|" docs/index.html || echo "Index modification failed"
+
+      - name: Commit and push reports
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add docs/ || true
+          git commit -m "Update Allure + Static reports [skip ci]" || true
           git push
-
-  deploy-to-pages:
-    needs: generate-report
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Upload artifact for GitHub Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
