@@ -1,4 +1,4 @@
-name: Generate Allure & Static Reports
+name: Generate Playwright + Allure Report
 
 on:
   push:
@@ -7,16 +7,14 @@ on:
       - "username.json"
 
 jobs:
-  run-tests:
+  test:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
@@ -25,22 +23,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          playwright install --with-deps chromium
+          playwright install --with-deps
 
-      - name: Run Playwright test and generate reports
+      - name: Run pytest with Allure
         run: |
           pytest main.py --alluredir=allure-results
-          allure generate allure-results --clean -o docs
 
-      - name: Add static summary button to Allure index.html
+      - name: Generate Allure HTML report
         run: |
-          REPORT_HTML_LINK='<a href="report.html" target="_blank" style="position:fixed;top:20px;right:20px;padding:10px 16px;background:#4CAF50;color:#fff;border-radius:6px;text-decoration:none;font-weight:bold;">📘 View Static Summary</a>'
-          sed -i "s|</body>|${REPORT_HTML_LINK}</body>|" docs/index.html || echo "Index modification failed"
+          allure generate allure-results --clean -o docs
 
       - name: Commit and push reports
         run: |
           git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add docs/ || true
-          git commit -m "Update Allure + Static reports [skip ci]" || true
+          git config user.email "actions@github.com"
+          git add docs/
+          git commit -m "🧪 Update Allure + static reports" || echo "No changes"
           git push
