@@ -25,7 +25,7 @@ def test_salesforce_username():
         # Step 1: Fill username
         try:
             page.fill("input#username", username)
-            step1 = "screenshots/step1_filled.png"
+            step1 = "screenshots/step1.png"
             page.screenshot(path=step1)
             allure.attach.file(step1, name="Step 1 - Filled Username", attachment_type=allure.attachment_type.PNG)
             result_data.append({"step": "Fill Username Field", "result": "Passed", "screenshot": step1})
@@ -35,7 +35,7 @@ def test_salesforce_username():
         # Step 2: Clear field
         try:
             page.fill("input#username", "")
-            step2 = "screenshots/step2_cleared.png"
+            step2 = "screenshots/step2.png"
             page.screenshot(path=step2)
             allure.attach.file(step2, name="Step 2 - Cleared Field", attachment_type=allure.attachment_type.PNG)
             result_data.append({"step": "Clear Username Field", "result": "Passed", "screenshot": step2})
