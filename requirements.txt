@@ -1,4 +1,4 @@
-playwright
 pytest
-pytest-allure-adaptor
-allure-pytest
+pytest-playwright
+playwright
+allure-pytest-bdd
