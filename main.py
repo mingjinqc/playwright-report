@@ -13,6 +13,7 @@ def test_salesforce_username():
     username = username_data.get("username", "test_user")
 
     os.makedirs("screenshots", exist_ok=True)
+    os.makedirs("docs", exist_ok=True)
     result_data = []
 
     with sync_playwright() as p:
@@ -43,33 +44,32 @@ def test_salesforce_username():
 
         browser.close()
 
-    # ✅ Create HTML summary table (Allure attach + static report)
-    with allure.step("Generate Summary Table"):
-        html_summary = """
-        <html>
-        <head><style>
-        table {border-collapse: collapse; width: 100%;}
-        th, td {border: 1px solid #ddd; padding: 8px;}
-        th {background-color: #f2f2f2;}
-        img {width: 200px;}
-        </style></head><body>
-        <h3>Test Summary</h3>
-        <table>
-            <tr><th>Step</th><th>Result</th><th>Screenshot</th></tr>
+    # Create static HTML summary
+    html_summary = """
+    <html>
+    <head><style>
+    table {border-collapse: collapse; width: 100%;}
+    th, td {border: 1px solid #ddd; padding: 8px;}
+    th {background-color: #f2f2f2;}
+    img {width: 200px;}
+    </style></head><body>
+    <h3>Test Summary</h3>
+    <table>
+        <tr><th>Step</th><th>Result</th><th>Screenshot</th></tr>
+    """
+    for item in result_data:
+        html_summary += f"""
+        <tr>
+            <td>{item['step']}</td>
+            <td>{item['result']}</td>
+            <td>{'<img src="'+item['screenshot']+'">' if item['screenshot'] else 'N/A'}</td>
+        </tr>
         """
-        for item in result_data:
-            html_summary += f"""
-            <tr>
-                <td>{item['step']}</td>
-                <td>{item['result']}</td>
-                <td>{'<img src="'+item['screenshot']+'">' if item['screenshot'] else 'N/A'}</td>
-            </tr>
-            """
-        html_summary += "</table></body></html>"
+    html_summary += "</table></body></html>"
 
-        os.makedirs("docs", exist_ok=True)
-        summary_path = "docs/report.html"
-        with open(summary_path, "w") as f:
-            f.write(html_summary)
+    summary_path = "docs/report.html"
+    with open(summary_path, "w") as f:
+        f.write(html_summary)
 
-        allure.attach.file(summary_path, name="HTML Summary", attachment_type=allure.attachment_type.HTML)
+    # Attach to Allure
+    allure.attach.file(summary_path, name="HTML Summary", attachment_type=allure.attachment_type.HTML)
