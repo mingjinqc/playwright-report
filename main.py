@@ -11,8 +11,7 @@ def test_salesforce_username():
         username_data = json.load(f)
     username = username_data.get("username", "test_user")
 
-    # Create folders
-    os.makedirs("screenshots", exist_ok=True)
+    # Create docs folder
     os.makedirs("docs", exist_ok=True)
 
     result_data = []
@@ -26,7 +25,7 @@ def test_salesforce_username():
         # Step 1: Fill username
         try:
             page.fill("input#username", username)
-            step1 = "screenshots/step1_filled.png"
+            step1 = "docs/step1.png"
             page.screenshot(path=step1)
             allure.attach.file(step1, name="Step 1 - Filled Username", attachment_type=allure.attachment_type.PNG)
             result_data.append({"step": "Fill Username Field", "result": "Passed", "screenshot": step1})
@@ -36,7 +35,7 @@ def test_salesforce_username():
         # Step 2: Clear username
         try:
             page.fill("input#username", "")
-            step2 = "screenshots/step2_cleared.png"
+            step2 = "docs/step2.png"
             page.screenshot(path=step2)
             allure.attach.file(step2, name="Step 2 - Cleared Field", attachment_type=allure.attachment_type.PNG)
             result_data.append({"step": "Clear Username Field", "result": "Passed", "screenshot": step2})
@@ -49,7 +48,6 @@ def test_salesforce_username():
     passed = sum(1 for x in result_data if x["result"] == "Passed")
     failed = sum(1 for x in result_data if x["result"] == "Failed")
 
-    # Create static HTML report with chart + table
     html_summary = f"""
     <html>
     <head>
@@ -58,7 +56,7 @@ def test_salesforce_username():
     table {{ border-collapse: collapse; width: 100%; margin-top: 20px; }}
     th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
     th {{ background-color: #f2f2f2; }}
-    img {{ width: 200px; }}
+    img {{ width: 200px; cursor: pointer; }}
     #chartContainer {{ width: 300px; height: 300px; margin: auto; }}
     </style>
     </head>
@@ -67,7 +65,6 @@ def test_salesforce_username():
     <div id="chartContainer">
         <canvas id="resultChart" width="300" height="300"></canvas>
     </div>
-
     <script>
     const ctx = document.getElementById('resultChart').getContext('2d');
     const passed = {passed};
@@ -103,25 +100,35 @@ def test_salesforce_username():
     }};
     Chart(ctx, data);
     </script>
-
+    
     <table>
-        <tr><th>Step</th><th>Result</th><th>Screenshot</th></tr>
+    <tr><th>Step</th><th>Result</th><th>Screenshot</th></tr>
     """
+    
     for item in result_data:
         html_summary += f"""
         <tr>
             <td>{item['step']}</td>
             <td>{item['result']}</td>
-            <td>{'<img src="'+item['screenshot']+'">' if item['screenshot'] else 'N/A'}</td>
+            <td>
+                {'<a href="'+item['screenshot']+'" target="_blank"><img src="'+item['screenshot'].replace("docs/", "")+'"></a>' if item['screenshot'] else 'N/A'}
+            </td>
         </tr>
         """
+    
     html_summary += "</table></body></html>"
-
-    summary_path = "docs/report.html"
-    with open(summary_path, "w") as f:
+    
+    # Save static HTML report as docs/report.html
+    report_path = "docs/report.html"
+    with open(report_path, "w") as f:
         f.write(html_summary)
+    
+    # Save Allure HTML report as docs/index.html and attach it
+    allure_path = "docs/index.html"
+    with open(allure_path, "w") as f:
+        f.write(html_summary)
+    
+    with open(allure_path, "r") as f:
+        allure.attach(f.read(), name="Allure HTML Summary", attachment_type=allure.attachment_type.HTML)
 
-    # Attach HTML summary safely inside a step
-    with allure.step("Attach HTML Summary Report"):
-        with open(summary_path, "r") as f:
-            allure.attach(f.read(), name="HTML Summary", attachment_type=allure.attachment_type.HTML)
+    
