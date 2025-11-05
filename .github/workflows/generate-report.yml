@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "username.json"
+      - "main.py"
 
 jobs:
   test:
@@ -27,16 +28,16 @@ jobs:
 
       - name: Run pytest with Allure
         run: |
-          pytest main.py --alluredir=allure-results
+          pytest main.py --alluredir=docs/allure-results
 
       - name: Generate Allure HTML report
         run: |
-          allure generate allure-results --clean -o docs
+          allure generate docs/allure-results --clean -o docs/allure
 
       - name: Commit and push reports
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add docs/
-          git commit -m "🧪 Update Allure + static reports" || echo "No changes"
+          git commit -m "🧪 Update Playwright + Allure reports" || echo "No changes"
           git push
