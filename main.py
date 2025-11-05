@@ -71,5 +71,6 @@ def test_salesforce_username():
     with open(summary_path, "w") as f:
         f.write(html_summary)
 
-    # Attach to Allure
-    allure.attach.file(summary_path, name="HTML Summary", attachment_type=allure.attachment_type.HTML)
+    # Attach to Allure safely using string (not file)
+    with open(summary_path, "r") as f:
+        allure.attach(f.read(), name="HTML Summary", attachment_type=allure.attachment_type.HTML)
