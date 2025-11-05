@@ -1,1 +1,4 @@
-playwright==1.48.0
+playwright
+pytest
+pytest-allure-adaptor
+allure-pytest
