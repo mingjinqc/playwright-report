@@ -1,106 +1,87 @@
 import json
 import os
-from pathlib import Path
+import allure
 from playwright.sync_api import sync_playwright
 
-# Paths
-repo_root = Path(__file__).parent.resolve()
-json_path = repo_root / "username.json"
-report_dir = repo_root / "docs"
-report_dir.mkdir(exist_ok=True)
+@allure.feature("Salesforce Login")
+@allure.story("Username Field Test")
+@allure.severity(allure.severity_level.NORMAL)
+def test_salesforce_username():
+    repo_root = os.getcwd()
+    json_path = os.path.join(repo_root, "username.json")
+    report_dir = os.path.join(repo_root, "docs")
+    os.makedirs(report_dir, exist_ok=True)
 
-step1 = report_dir / "step1.png"
-step2 = report_dir / "step2.png"
-report_html = report_dir / "report.html"
-
-# Read username
-def read_username():
+    username = ""
     try:
         with open(json_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return data.get("username", "")
+            username = json.load(f).get("username", "")
     except Exception as e:
-        print(f"❌ Failed to read {json_path}: {e}")
-        return ""
+        allure.attach(str(e), "Error reading username.json")
 
-def generate_html_report(step1_img, step2_img, filled_ok, cleared_ok, username):
-    html = f"""<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Playwright Test Report</title>
-  <style>
-    body {{ font-family: Arial, sans-serif; padding: 18px; }}
-    table {{ border-collapse: collapse; width: 100%; max-width: 900px; }}
-    th, td {{ border: 1px solid #ccc; padding: 8px; text-align: left; }}
-    th {{ background: #f2f2f2; }}
-    .pass {{ color: green; font-weight: bold; }}
-    .fail {{ color: red; font-weight: bold; }}
-    img.sshot {{ max-width: 320px; border: 1px solid #999; }}
-  </style>
-</head>
-<body>
-<h1>Automated Playwright Test Report</h1>
-<p><strong>Username value used:</strong> {username or "(Not Found in username.json)"}</p>
-<table>
-  <thead>
-    <tr><th>No.</th><th>Step</th><th>Result</th><th>Screenshot</th></tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>1.</td>
-      <td>Fill value in username field.</td>
-      <td class="{ 'pass' if filled_ok else 'fail' }">{ 'PASS' if filled_ok else 'FAIL' }</td>
-      <td><img class="sshot" src="{step1_img}" alt="step1"></td>
-    </tr>
-    <tr>
-      <td>2.</td>
-      <td>Empty value in username field.</td>
-      <td class="{ 'pass' if cleared_ok else 'fail' }">{ 'PASS' if cleared_ok else 'FAIL' }</td>
-      <td><img class="sshot" src="{step2_img}" alt="step2"></td>
-    </tr>
-  </tbody>
-</table>
-<p>Generated automatically by <b>Playwright</b>.</p>
-</body>
-</html>"""
-    report_html.write_text(html, encoding="utf-8")
-    print(f"📄 Report generated: {report_html.absolute()}")
+    step1_path = os.path.join(report_dir, "step1.png")
+    step2_path = os.path.join(report_dir, "step2.png")
 
-def run_test():
-    username = read_username()
-
-    print("🌐 Launching browser...")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(viewport={"width": 1920, "height": 1080})
-        page = context.new_page()
-
+        page = browser.new_page(viewport={"width": 1920, "height": 1080})
         page.goto("https://login.salesforce.com/")
-        print("✅ Opened Salesforce login page")
 
         filled_ok = cleared_ok = False
-        try:
-            username_field = page.locator("#username")
-            username_field.fill(username)
-            filled_value = username_field.input_value()
-            filled_ok = bool(username and filled_value == username)
-            page.screenshot(path=step1)
-            print(f"📸 step1.png captured — username filled check: {'PASS' if filled_ok else 'FAIL'}")
 
-            username_field.fill("")  # clear
-            cleared_value = username_field.input_value()
-            cleared_ok = cleared_value == ""
-            page.screenshot(path=step2)
-            print(f"📸 step2.png captured — username cleared check: {'PASS' if cleared_ok else 'FAIL'}")
+        with allure.step("Step 1: Fill username field"):
+            try:
+                page.fill("#username", username)
+                filled_ok = page.input_value("#username") == username
+                page.screenshot(path=step1_path)
+                allure.attach.file(step1_path, name="Step 1 Screenshot",
+                                   attachment_type=allure.attachment_type.PNG)
+            except Exception as e:
+                allure.attach(str(e), "Step 1 Error")
 
-        except Exception as e:
-            print(f"❌ Error during test: {e}")
-        finally:
-            browser.close()
+        with allure.step("Step 2: Clear username field"):
+            try:
+                page.fill("#username", "")
+                cleared_ok = page.input_value("#username") == ""
+                page.screenshot(path=step2_path)
+                allure.attach.file(step2_path, name="Step 2 Screenshot",
+                                   attachment_type=allure.attachment_type.PNG)
+            except Exception as e:
+                allure.attach(str(e), "Step 2 Error")
 
-        generate_html_report(step1.name, step2.name, filled_ok, cleared_ok, username)
+        browser.close()
 
-if __name__ == "__main__":
-    run_test()
+    html = f"""
+    <html>
+    <head>
+        <style>
+            table {{border-collapse:collapse;width:100%;font-family:Arial,sans-serif;}}
+            th,td {{border:1px solid #ccc;padding:8px;text-align:left;}}
+            th {{background:#f2f2f2;}}
+            .pass {{color:green;font-weight:bold;}}
+            .fail {{color:red;font-weight:bold;}}
+            img {{max-width:300px;border:1px solid #999;}}
+        </style>
+    </head>
+    <body>
+    <h3>Step Results Summary</h3>
+    <table>
+        <tr><th>No.</th><th>Step</th><th>Result</th><th>Screenshot</th><th>Feature</th></tr>
+        <tr>
+          <td>1</td><td>Fill username field</td>
+          <td class="{ 'pass' if filled_ok else 'fail' }">{ 'PASS' if filled_ok else 'FAIL' }</td>
+          <td><img src="{os.path.basename(step1_path)}"/></td>
+          <td rowspan="2">Salesforce Login</td>
+        </tr>
+        <tr>
+          <td>2</td><td>Clear username field</td>
+          <td class="{ 'pass' if cleared_ok else 'fail' }">{ 'PASS' if cleared_ok else 'FAIL' }</td>
+          <td><img src="{os.path.basename(step2_path)}"/></td>
+        </tr>
+    </table>
+    </body>
+    </html>
+    """
+    allure.attach(html, name="Custom Step Table",
+                  attachment_type=allure.attachment_type.HTML)
+    assert filled_ok and cleared_ok, "One or more steps failed"
