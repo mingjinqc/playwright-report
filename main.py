@@ -14,7 +14,7 @@ def test_salesforce_username():
 
     # Create folders
     os.makedirs("docs", exist_ok=True)
-    os.makedirs("allure-results", exist_ok=True)  # Allure output folder
+    os.makedirs("docs/allure-results", exist_ok=True)  # Allure output folder inside docs
 
     result_data = []
 
