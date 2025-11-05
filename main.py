@@ -1,5 +1,5 @@
-import os
 import json
+import os
 import time
 import allure
 from playwright.sync_api import sync_playwright
@@ -23,24 +23,26 @@ def test_salesforce_username():
         time.sleep(2)
 
         # Step 1: Fill username
-        try:
-            page.fill("input#username", username)
-            step1 = "docs/step1.png"
-            page.screenshot(path=step1)
-            allure.attach.file(step1, name="Step 1 - Filled Username", attachment_type=allure.attachment_type.PNG)
-            result_data.append({"step": "Fill Username Field", "result": "Passed", "screenshot": step1})
-        except Exception:
-            result_data.append({"step": "Fill Username Field", "result": "Failed", "screenshot": None})
+        with allure.step("Step 1: Fill username field"):
+            try:
+                page.fill("input#username", username)
+                step1 = "docs/step1.png"
+                page.screenshot(path=step1)
+                allure.attach.file(step1, name="Step 1 Screenshot", attachment_type=allure.attachment_type.PNG)
+                result_data.append({"step": "Fill Username Field", "result": "Passed", "screenshot": step1})
+            except Exception:
+                result_data.append({"step": "Fill Username Field", "result": "Failed", "screenshot": None})
 
         # Step 2: Clear username
-        try:
-            page.fill("input#username", "")
-            step2 = "docs/step2.png"
-            page.screenshot(path=step2)
-            allure.attach.file(step2, name="Step 2 - Cleared Field", attachment_type=allure.attachment_type.PNG)
-            result_data.append({"step": "Clear Username Field", "result": "Passed", "screenshot": step2})
-        except Exception:
-            result_data.append({"step": "Clear Username Field", "result": "Failed", "screenshot": None})
+        with allure.step("Step 2: Clear username field"):
+            try:
+                page.fill("input#username", "")
+                step2 = "docs/step2.png"
+                page.screenshot(path=step2)
+                allure.attach.file(step2, name="Step 2 Screenshot", attachment_type=allure.attachment_type.PNG)
+                result_data.append({"step": "Clear Username Field", "result": "Passed", "screenshot": step2})
+            except Exception:
+                result_data.append({"step": "Clear Username Field", "result": "Failed", "screenshot": None})
 
         browser.close()
 
@@ -48,6 +50,7 @@ def test_salesforce_username():
     passed = sum(1 for x in result_data if x["result"] == "Passed")
     failed = sum(1 for x in result_data if x["result"] == "Failed")
 
+    # Generate HTML summary
     html_summary = f"""
     <html>
     <head>
@@ -100,11 +103,10 @@ def test_salesforce_username():
     }};
     Chart(ctx, data);
     </script>
-    
     <table>
-    <tr><th>Step</th><th>Result</th><th>Screenshot</th></tr>
+        <tr><th>Step</th><th>Result</th><th>Screenshot</th></tr>
     """
-    
+
     for item in result_data:
         html_summary += f"""
         <tr>
@@ -115,20 +117,20 @@ def test_salesforce_username():
             </td>
         </tr>
         """
-    
+
     html_summary += "</table></body></html>"
-    
-    # Save static HTML report as docs/report.html
+
+    # Save static HTML report
     report_path = "docs/report.html"
     with open(report_path, "w") as f:
         f.write(html_summary)
-    
-    # Save Allure HTML report as docs/index.html and attach it
+
+    # Save Allure HTML report
     allure_path = "docs/index.html"
     with open(allure_path, "w") as f:
         f.write(html_summary)
-    
-    with open(allure_path, "r") as f:
-        allure.attach(f.read(), name="Allure HTML Summary", attachment_type=allure.attachment_type.HTML)
 
-    
+    # Attach Allure HTML report inside a step
+    with allure.step("Attach Allure HTML Summary"):
+        with open(allure_path, "r") as f:
+            allure.attach(f.read(), name="Allure HTML Summary", attachment_type=allure.attachment_type.HTML)
