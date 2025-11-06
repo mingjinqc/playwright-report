@@ -1,43 +1,60 @@
-name: Generate Playwright + Allure Report
+name: Generate Report and Publish to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
-      - "username.json"
-      - "main.py"
+      - 'username.json'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
-  test:
+  generate-report:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install -r requirements.txt
-          playwright install --with-deps
+          playwright install --with-deps chromium
 
-      - name: Run pytest with Allure
-        run: |
-          pytest main.py --alluredir=docs/allure-results
+      - name: Run Playwright test
+        run: python main.py
 
-      - name: Generate Allure HTML report
+      - name: Commit updated report to main
         run: |
-          allure generate docs/allure-results --clean -o docs/allure
-
-      - name: Commit and push reports
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/
-          git commit -m "🧪 Update Playwright + Allure reports" || echo "No changes"
+          git commit -m "Auto-update Playwright report after username.json change" || echo "No changes to commit"
           git push
+
+  deploy-to-pages:
+    needs: generate-report
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Upload artifact for GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
