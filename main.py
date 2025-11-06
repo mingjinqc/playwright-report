@@ -1,84 +1,106 @@
-import os
 import json
-import time
+import os
+from pathlib import Path
 from playwright.sync_api import sync_playwright
-import pytest
-import allure
 
-@allure.feature("Salesforce Username Field Test")
-def test_salesforce_username():
-    # Load username
-    with open("username.json") as f:
-        username_data = json.load(f)
-    username = username_data.get("username", "test_user")
+# Paths
+repo_root = Path(__file__).parent.resolve()
+json_path = repo_root / "username.json"
+report_dir = repo_root / "docs"
+report_dir.mkdir(exist_ok=True)
 
-    # Create folders
-    os.makedirs("docs", exist_ok=True)
-    os.makedirs("docs/allure-results", exist_ok=True)  # Allure output folder inside docs
+step1 = report_dir / "step1.png"
+step2 = report_dir / "step2.png"
+report_html = report_dir / "report.html"
 
-    result_data = []
+# Read username
+def read_username():
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data.get("username", "")
+    except Exception as e:
+        print(f"❌ Failed to read {json_path}: {e}")
+        return ""
 
+def generate_html_report(step1_img, step2_img, filled_ok, cleared_ok, username):
+    html = f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Playwright Test Report</title>
+  <style>
+    body {{ font-family: Arial, sans-serif; padding: 18px; }}
+    table {{ border-collapse: collapse; width: 100%; max-width: 900px; }}
+    th, td {{ border: 1px solid #ccc; padding: 8px; text-align: left; }}
+    th {{ background: #f2f2f2; }}
+    .pass {{ color: green; font-weight: bold; }}
+    .fail {{ color: red; font-weight: bold; }}
+    img.sshot {{ max-width: 320px; border: 1px solid #999; }}
+  </style>
+</head>
+<body>
+<h1>Automated Playwright Test Report</h1>
+<p><strong>Username value used:</strong> {username or "(Not Found in username.json)"}</p>
+<table>
+  <thead>
+    <tr><th>No.</th><th>Step</th><th>Result</th><th>Screenshot</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1.</td>
+      <td>Fill value in username field.</td>
+      <td class="{ 'pass' if filled_ok else 'fail' }">{ 'PASS' if filled_ok else 'FAIL' }</td>
+      <td><img class="sshot" src="{step1_img}" alt="step1"></td>
+    </tr>
+    <tr>
+      <td>2.</td>
+      <td>Empty value in username field.</td>
+      <td class="{ 'pass' if cleared_ok else 'fail' }">{ 'PASS' if cleared_ok else 'FAIL' }</td>
+      <td><img class="sshot" src="{step2_img}" alt="step2"></td>
+    </tr>
+  </tbody>
+</table>
+<p>Generated automatically by <b>Playwright</b>.</p>
+</body>
+</html>"""
+    report_html.write_text(html, encoding="utf-8")
+    print(f"📄 Report generated: {report_html.absolute()}")
+
+def run_test():
+    username = read_username()
+
+    print("🌐 Launching browser...")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto("https://login.salesforce.com")
-        time.sleep(2)
+        context = browser.new_context(viewport={"width": 1920, "height": 1080})
+        page = context.new_page()
 
-        # Step 1: Fill username
+        page.goto("https://login.salesforce.com/")
+        print("✅ Opened Salesforce login page")
+
+        filled_ok = cleared_ok = False
         try:
-            page.fill("input#username", username)
-            step1 = "docs/step1.png"
+            username_field = page.locator("#username")
+            username_field.fill(username)
+            filled_value = username_field.input_value()
+            filled_ok = bool(username and filled_value == username)
             page.screenshot(path=step1)
-            allure.attach.file(step1, name="Step 1 - Filled Username", attachment_type=allure.attachment_type.PNG)
-            result_data.append({"step": "Fill Username Field", "result": "Passed", "screenshot": step1})
-        except Exception:
-            result_data.append({"step": "Fill Username Field", "result": "Failed", "screenshot": None})
+            print(f"📸 step1.png captured — username filled check: {'PASS' if filled_ok else 'FAIL'}")
 
-        # Step 2: Clear username
-        try:
-            page.fill("input#username", "")
-            step2 = "docs/step2.png"
+            username_field.fill("")  # clear
+            cleared_value = username_field.input_value()
+            cleared_ok = cleared_value == ""
             page.screenshot(path=step2)
-            allure.attach.file(step2, name="Step 2 - Cleared Field", attachment_type=allure.attachment_type.PNG)
-            result_data.append({"step": "Clear Username Field", "result": "Passed", "screenshot": step2})
-        except Exception:
-            result_data.append({"step": "Clear Username Field", "result": "Failed", "screenshot": None})
+            print(f"📸 step2.png captured — username cleared check: {'PASS' if cleared_ok else 'FAIL'}")
 
-        browser.close()
+        except Exception as e:
+            print(f"❌ Error during test: {e}")
+        finally:
+            browser.close()
 
-    # Count pass/fail
-    passed = sum(1 for x in result_data if x["result"] == "Passed")
-    failed = sum(1 for x in result_data if x["result"] == "Failed")
+        generate_html_report(step1.name, step2.name, filled_ok, cleared_ok, username)
 
-    # ✅ Static HTML report (docs/index.html)
-    html_summary = f"""
-    <html>
-    <head>
-        <style>
-        body {{ font-family: Arial, sans-serif; margin: 20px; }}
-        table {{ border-collapse: collapse; width: 100%; margin-top: 20px; }}
-        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-        th {{ background-color: #f2f2f2; }}
-        img {{ width: 200px; cursor: pointer; }}
-        </style>
-    </head>
-    <body>
-        <h2>Salesforce Username Field Test Summary</h2>
-        <table>
-            <tr><th>Step</th><th>Result</th><th>Screenshot</th></tr>
-    """
-
-    for item in result_data:
-        html_summary += f"""
-            <tr>
-                <td>{item['step']}</td>
-                <td>{item['result']}</td>
-                <td>{'<a href="'+item['screenshot']+'" target="_blank"><img src="'+item['screenshot'].replace("docs/", "")+'"></a>' if item['screenshot'] else 'N/A'}</td>
-            </tr>
-        """
-
-    html_summary += "</table></body></html>"
-
-    # Save static HTML report
-    with open("docs/index.html", "w") as f:
-        f.write(html_summary)
+if __name__ == "__main__":
+    run_test()
