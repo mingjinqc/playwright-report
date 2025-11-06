@@ -1,36 +1,35 @@
-# 🧪 Playwright Allure Report Generator
+# 🧪 Playwright Report Generator
 
-This repository runs automated Playwright browser tests and generates **two reports** whenever `username.json` is updated on the `main` branch.
+This repository runs a Playwright automation whenever `username.json` is changed in the `main` branch.
 
 ---
 
 ## 🔹 What it does
-1. Opens [https://login.salesforce.com](https://login.salesforce.com).
-2. Fills the username from `username.json` and takes a screenshot.
-3. Clears the field and takes another screenshot.
-4. Generates **two reports**:
-   - 📊 `docs/index.html` → Allure interactive report  
-   - 📋 `docs/report.html` → Static HTML summary table
-5. Publishes both automatically to **GitHub Pages 🌐**.
+1. Opens [https://login.salesforce.com](https://login.salesforce.com)
+2. Fills the username field with the value from `username.json`
+3. Takes a screenshot
+4. Clears the field, takes another screenshot
+5. Generates an HTML report in the `docs/` folder
+6. Automatically publishes it to GitHub Pages 🌐
 
 ---
 
 ## 🔹 Files
-- `main.py` → Playwright test + report logic  
-- `username.json` → Test input data  
-- `.github/workflows/generate-report.yml` → Automation  
-- `docs/` → Allure report (`index.html`) + static report (`report.html`)
+- `main.py` → Main Playwright script  
+- `username.json` → Input data  
+- `docs/` → Screenshots + `report.html`  
+- `.github/workflows/generate-report.yml` → GitHub Actions automation
 
 ---
 
 ## 🔹 Trigger
-Runs automatically when either `main.py` or `username.json` changes in the `main` branch.
+Runs automatically when `username.json` changes in the `main` branch.
 
 ---
 
-## 🔹 View the Reports on GitHub Pages
-After the first successful run:
+## 🔹 View the Report on GitHub Pages
+After the first successful workflow run, view your latest report here:
 
 ```html
-https://<your-username>.github.io/<your-repo-name>/index.html
 https://<your-username>.github.io/<your-repo-name>/report.html
+```
