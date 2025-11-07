@@ -38,6 +38,7 @@ def generate_html_report(step1_img, step2_img, filled_ok, cleared_ok, username):
     .pass {{ color: green; font-weight: bold; }}
     .fail {{ color: red; font-weight: bold; }}
     img.sshot {{ max-width: 320px; border: 1px solid #999; }}
+    footer {{ margin-top: 20px; font-size: 0.9em; color: #555; }}
   </style>
 </head>
 <body>
@@ -62,7 +63,15 @@ def generate_html_report(step1_img, step2_img, filled_ok, cleared_ok, username):
     </tr>
   </tbody>
 </table>
-<p>Generated automatically by <b>Playwright</b>.</p>
+<p>Generated automatically by <b>Playwright (Python)</b>.</p>
+<footer id="last-updated"></footer>
+<script>
+  const footerDate = document.getElementById("last-updated");
+  const now = new Date();
+  const options = {{ year: "numeric", month: "short", day: "numeric" }};
+  const formattedDate = now.toLocaleDateString("en-US", options);
+  footerDate.textContent = `Last updated: ${{formattedDate}}`;
+</script>
 </body>
 </html>"""
     report_html.write_text(html, encoding="utf-8")
